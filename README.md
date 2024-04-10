@@ -17,7 +17,7 @@ Wireguard走UDP协议，部分运营商会对UDP进行限速QOS处理使连接�
 
 # 使用方法
 
-> bash <(curl -L -s https://raw.githubusercontent.com/condercx/WireguardForGame/master/wg-for-game.sh)
+`bash <(curl -L -s https://raw.githubusercontent.com/condercx/WireguardForGame/master/wg-for-game.sh)`
 
 用Winscp等软件登入VPS,下载目录/etc/wireguard/中的client.conf到Tunsafe配置文件目录
 
