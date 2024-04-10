@@ -1,35 +1,49 @@
 #!/bin/bash
-
-# =========================================================
 # System Request:CentOS 7+ 、Debian 8+、Ubuntu 16+
 # Origin Author:lmc999
-# Dscription: Wireguard游戏加速器一键脚本
+# Description: Wireguard游戏加速器一键脚本
 # Version: 2.0
-# Github:https://github.com/lmc999/WireguardForGame
-# TG交流群: https://t.me/gameaccelerate
-# =========================================================
 
 Green="\033[32m"
 Font="\033[0m"
 Blue="\033[33m"
-
 NIC="$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)"
 
 rootness(){
-    if [[ $EUID -ne 0 ]]; then
-       echo -e "${Blue}此脚本必须以root用户运行!即将退出程序...${Font}" 1>&2
-       exit 1
-    fi
+  if [[ $EUID -ne 0 ]]; then
+    echo -e "${Blue}此脚本必须以root用户运行!即将退出程序...${Font}" 1>&2
+    exit 1
+  fi
 }
 
 checkos(){
-    source /etc/os-release
-    OS=$ID
-    VERSION=$VERSION_ID
+  source /etc/os-release
+  OS=$ID
+  VERSION=$VERSION_ID
 }
 
+uninstall_wireguard(){
+  echo -e "${Green}正在卸载 Wireguard ...${Font}" 
+  wg-quick down wg0
+  systemctl disable wg-quick@wg0
 
-
+  if [[ ${OS} == 'ubuntu' || ${OS} == 'debian' ]]; then
+    apt-get remove -y wireguard
+  elif [[ ${OS} == 'centos' ]]; then
+    yum remove -y kmod-wireguard wireguard-tools
+    systemctl start firewalld
+    systemctl enable firewalld
+  else
+    echo -e "${Blue}此脚本暂不支持你的操作系统，即将退出...${Font}"
+    exit 1
+  fi
+  
+  rm -rf /etc/wireguard/
+  rm -rf /etc/udp/
+  
+  echo -e "${Green} Wireguard 卸载完成. ${Font}"
+  exit 0
+}
 
 config_client(){
 cat > /etc/wireguard/client.conf <<-EOF
@@ -49,7 +63,6 @@ Endpoint = 127.0.0.1:2099
 AllowedIPs = 0.0.0.0/0, ::0/0
 PersistentKeepalive = 25
 EOF
-
 }
 
 #Install Wireguard
@@ -172,5 +185,9 @@ systemctl start rc-local >/dev/null 2>&1
 
 rootness
 checkos
-wireguard_install
-auto_start
+if [ "$1" = "uninstall" ]; then
+  uninstall_wireguard
+else
+  wireguard_install
+  auto_start
+fi
